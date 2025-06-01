@@ -60,66 +60,67 @@ const onSubmit = async (data) => {
 
   let paymentResult = "error";
 
+  // 1. Handle payment simulation
   try {
-    // Ensure simulatePayment doesn't crash everything
     paymentResult = await simulatePayment(data?.paymentFlow);
   } catch (error) {
     console.error("❌ simulatePayment failed:", error);
+    paymentResult = "error";
   }
 
-  // --- API 1: Save order to DB ---
-  try {
-    await fetch("http://localhost:3001/api/users", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: data.fullName,
-        email: data.email,
-        phonenumber: data.phone,
-        street: data.address,
-        city: data.city,
-        state: data.state,
-        zip: data.zip,
-        status: paymentResult,
-        orderno: orderId,
-        productname: state.product.title,
-        variant: state.variant,
-        quantity: state.quantity,
-        ordervalue: (state.quantity * state.product.price * 1.18).toFixed(2)
-      })
-    });
-  } catch (error) {
-    console.error("❌ Error saving user data:", error);
-  }
-
-  // --- API 2: Send Email ---
-  try {
-    await fetch("http://localhost:3001/api/send-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email: data.email,
-        subject: `Order ${orderId} - ${paymentResult.toUpperCase()}`,
-        status: paymentResult,
-        order: {
-          orderId,
-          product: state.product.title,
+  // 2. Save order to DB (non-blocking)
+  (async () => {
+    try {
+      await fetch("http://localhost:3001/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.fullName,
+          email: data.email,
+          phonenumber: data.phone,
+          street: data.address,
+          city: data.city,
+          state: data.state,
+          zip: data.zip,
+          status: paymentResult,
+          orderno: orderId,
+          productname: state.product.title,
           variant: state.variant,
           quantity: state.quantity,
-          total: (state.quantity * state.product.price * 1.18).toFixed(2)
-        },
-        failureReason: paymentResult === "success" ? null : "Transaction failed"
-      })
-    });
-  } catch (error) {
-    console.error("❌ Error sending email:", error);
-  }
+          ordervalue: (state.quantity * state.product.price * 1.18).toFixed(2)
+        })
+      });
+    } catch (error) {
+      console.error("❌ Error saving user data:", error);
+    }
+  })();
 
-  // Final navigation decision
+  // 3. Send email (non-blocking)
+  (async () => {
+    try {
+      await fetch("http://localhost:3001/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          subject: `Order ${orderId} - ${paymentResult.toUpperCase()}`,
+          status: paymentResult,
+          order: {
+            orderId,
+            product: state.product.title,
+            variant: state.variant,
+            quantity: state.quantity,
+            total: (state.quantity * state.product.price * 1.18).toFixed(2)
+          },
+          failureReason: paymentResult === "success" ? null : "Transaction failed"
+        })
+      });
+    } catch (error) {
+      console.error("❌ Error sending email:", error);
+    }
+  })();
+
+  // ✅ 4. Always navigate based on payment result
   if (paymentResult === "success") {
     navigate("/thank-you", { state: { ...payload, status: "success" } });
   } else if (paymentResult === "declined") {
@@ -128,6 +129,7 @@ const onSubmit = async (data) => {
     navigate("/payment-error", { state: { ...payload, status: "error" } });
   }
 };
+
 
 
   const simulatePayment = async (payload) => {
