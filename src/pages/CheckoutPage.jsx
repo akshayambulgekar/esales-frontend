@@ -73,8 +73,8 @@ const CheckoutPage = () => {
     try {
       // Simulate a payment gateway response (Replace with actual payment logic)
       const paymentResult = await simulatePayment(data?.paymentFlow);
+      try {
       await fetch("http://localhost:3001/api/users", {
-
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -92,10 +92,15 @@ const CheckoutPage = () => {
           productname: state.product.title,
           variant: state.variant,
           quantity: state.quantity,
-          ordervalue: (state.quantity * state.product.price * 1.18).toFixed(2) // total incl. 18% tax
-
+          ordervalue: (state.quantity * state.product.price * 1.18).toFixed(2)
         })
       });
+    } catch (error) {
+      console.error("Error saving user data:", error);
+    }
+
+    // Call API 2: Send email
+    try {
       await fetch("http://localhost:3001/api/send-email", {
         method: "POST",
         headers: {
@@ -110,11 +115,14 @@ const CheckoutPage = () => {
             product: state.product.title,
             variant: state.variant,
             quantity: state.quantity,
-            total: (state.quantity * state.product.price * 1.18).toFixed(2) // total incl. 18% tax
+            total: (state.quantity * state.product.price * 1.18).toFixed(2)
           },
           failureReason: paymentResult === "success" ? null : "Transaction failed"
         })
       });
+    } catch (error) {
+      console.error("Error sending email:", error);
+    }
 
       if (paymentResult === "success") {
 
