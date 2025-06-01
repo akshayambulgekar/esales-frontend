@@ -46,108 +46,93 @@ const CheckoutPage = () => {
   });
 
   const option = ["Approved", "Declined", "Gateway Failure"]
-  // const onSubmit = (data) => {
-  //   const orderId = uuidv4();
-  //   const payload = {
-  //     orderId,
-  //     product: state.product,
-  //     variant: state.variant,
-  //     quantity: state.quantity,
-  //     customer: data,
-  //     status: "success"
-  //   };
-  //   navigate("/thank-you", { state: payload });
-  // };
 
-  const onSubmit = async (data) => {
-    const orderId = uuidv4();
-    const payload = {
-      orderId,
-      product: state.product,
-      variant: state.variant,
-      quantity: state.quantity,
-      customer: data
-    };
-    console.log(data, "data")
 
-    try {
-      // Simulate a payment gateway response (Replace with actual payment logic)
-      const paymentResult = await simulatePayment(data?.paymentFlow);
-      try {
-      await fetch("http://localhost:3001/api/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: data.fullName,
-          email: data.email,
-          phonenumber: data.phone,
-          street: data.address,
-          city: data.city,
-          state: data.state,
-          zip: data.zip,
-          status: paymentResult,
-          orderno: orderId,
-          productname: state.product.title,
-          variant: state.variant,
-          quantity: state.quantity,
-          ordervalue: (state.quantity * state.product.price * 1.18).toFixed(2)
-        })
-      });
-    } catch (error) {
-      console.error("Error saving user data:", error);
-    }
-
-    // Call API 2: Send email
-    try {
-      await fetch("http://localhost:3001/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email: data.email,
-          subject: `Order ${orderId} - ${paymentResult.toUpperCase()}`,
-          status: paymentResult,
-          order: {
-            orderId,
-            product: state.product.title,
-            variant: state.variant,
-            quantity: state.quantity,
-            total: (state.quantity * state.product.price * 1.18).toFixed(2)
-          },
-          failureReason: paymentResult === "success" ? null : "Transaction failed"
-        })
-      });
-    } catch (error) {
-      console.error("Error sending email:", error);
-    }
-
-      if (paymentResult === "success") {
-
-        // Payment approved, navigate to thank you page
-
-        navigate("/thank-you", { state: { ...payload, status: "success" } });
-      } else if (paymentResult === "declined") {
-        // Payment declined, navigate to declined page
-        navigate("/payment-declined", { state: { ...payload, status: "declined" } });
-      } else {
-        // Gateway error, navigate to error page
-        navigate("/payment-error", { state: { ...payload, status: "error" } });
-      }
-    } catch (error) {
-      // Handle any unexpected errors during payment processing
-      console.error("Payment Error:", error);
-      // Navigate to an error page or show an error message to the user
-      navigate("/payment-error", { state: { ...payload, status: "error" } });
-    }
+const onSubmit = async (data) => {
+  const orderId = uuidv4();
+  const payload = {
+    orderId,
+    product: state.product,
+    variant: state.variant,
+    quantity: state.quantity,
+    customer: data
   };
 
-  // Simulate payment function (Replace with actual payment processing logic)
+  let paymentResult = "error";
+
+  try {
+    // Ensure simulatePayment doesn't crash everything
+    paymentResult = await simulatePayment(data?.paymentFlow);
+  } catch (error) {
+    console.error("❌ simulatePayment failed:", error);
+  }
+
+  // --- API 1: Save order to DB ---
+  try {
+    await fetch("http://localhost:3001/api/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: data.fullName,
+        email: data.email,
+        phonenumber: data.phone,
+        street: data.address,
+        city: data.city,
+        state: data.state,
+        zip: data.zip,
+        status: paymentResult,
+        orderno: orderId,
+        productname: state.product.title,
+        variant: state.variant,
+        quantity: state.quantity,
+        ordervalue: (state.quantity * state.product.price * 1.18).toFixed(2)
+      })
+    });
+  } catch (error) {
+    console.error("❌ Error saving user data:", error);
+  }
+
+  // --- API 2: Send Email ---
+  try {
+    await fetch("http://localhost:3001/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: data.email,
+        subject: `Order ${orderId} - ${paymentResult.toUpperCase()}`,
+        status: paymentResult,
+        order: {
+          orderId,
+          product: state.product.title,
+          variant: state.variant,
+          quantity: state.quantity,
+          total: (state.quantity * state.product.price * 1.18).toFixed(2)
+        },
+        failureReason: paymentResult === "success" ? null : "Transaction failed"
+      })
+    });
+  } catch (error) {
+    console.error("❌ Error sending email:", error);
+  }
+
+  // Final navigation decision
+  if (paymentResult === "success") {
+    navigate("/thank-you", { state: { ...payload, status: "success" } });
+  } else if (paymentResult === "declined") {
+    navigate("/payment-declined", { state: { ...payload, status: "declined" } });
+  } else {
+    navigate("/payment-error", { state: { ...payload, status: "error" } });
+  }
+};
+
+
   const simulatePayment = async (payload) => {
-    // Simulate random outcome (replace with your actual payment gateway integration logic)
-    // const randomOutcome = Math.random();
+ 
+
 
     if (payload == "Approved") {
       return "success"; // Simulate successful payment
