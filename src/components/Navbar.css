@@ -1,0 +1,91 @@
+/* Reset/Basic */
+* {
+  box-sizing: border-box;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 2rem;
+  background-color: #1e1e2f;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-logo {
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #cbd5e1; /* lighter gray */
+  font-weight: 600;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+  color: #60a5fa; /* blue tint */
+  border-bottom: 2px solid #60a5fa;
+  outline: none;
+}
+
+.nav-icons {
+  display: flex;
+  gap: 1rem;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #cbd5e1;
+  transition: color 0.3s ease;
+  padding: 0.25rem;
+  border-radius: 4px;
+}
+
+.icon-button:hover,
+.icon-button:focus {
+  color: #60a5fa;
+  outline: none;
+  background-color: rgba(96, 165, 250, 0.15);
+}
+
+/* Responsive for small screens */
+@media (max-width: 600px) {
+  .navbar {
+    flex-wrap: wrap;
+    padding: 0.5rem 1rem;
+  }
+  .nav-menu {
+    width: 100%;
+    justify-content: center;
+    gap: 1rem;
+    margin: 0.5rem 0;
+  }
+  .nav-icons {
+    width: 100%;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 0.5rem;
+  }
+}
